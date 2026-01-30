@@ -1,93 +1,132 @@
-# ai-moltbot
+# MoltBot (OpenClaw) — Personal AI Agent Setup
 
+> WSL2 (Ubuntu) + Telegram + OpenRouter, foreground execution mode
 
+## Quick Start
 
-## Getting started
+```bash
+# 1. Install
+npm install -g pnpm
+pnpm add -g openclaw@latest
+openclaw --version
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+# 2. Onboarding (choose Manual, skip model setup)
+openclaw onboard
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+# 3. Set model
+openclaw models set "openrouter/openai/gpt-oss-120b:free"
 
-## Add your files
+# 4. Start (foreground mode)
+bash scripts/start.sh
+```
 
-* [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+## Token Security
+
+### All secrets in `.env`, never in config
+
+```bash
+# .env (gitignored, never committed)
+TELEGRAM_BOT_TOKEN="your-telegram-bot-token"
+OPENROUTER_API_KEY="sk-or-v1-your-openrouter-key"
+SLACK_WEBHOOK_URL="https://hooks.slack.com/services/..."
+```
+
+openclaw automatically reads `TELEGRAM_BOT_TOKEN` and `OPENROUTER_API_KEY` from environment variables — **no need to put them in `openclaw.json`**.
+
+### Add Telegram Channel
+
+```bash
+# Interactive setup (will prompt for token)
+openclaw channels add
+
+# Verify token source is env var
+openclaw channels list
+# Should show: Telegram default: configured, token=env, enabled
+```
+
+### Pairing (Authorize Users)
+
+DM policy should be set to `pairing` to ensure only you can operate the bot:
+
+1. Find your bot on Telegram (e.g. `@iNewsyBot`), send `hello`
+2. Bot replies with a pairing code
+3. Approve in terminal:
+   ```bash
+   openclaw pairing approve telegram <pairing-code>
+   ```
+4. Success when you see `Approved telegram sender <your-id>`
+
+### Restart Gateway to Apply Changes
+
+```bash
+# If gateway is running in foreground: Ctrl+C to stop, then restart
+bash scripts/start.sh
+
+# If running as systemd daemon:
+openclaw gateway stop
+bash scripts/start.sh
+```
+
+## OpenRouter Privacy Settings
+
+> **Important**: Free models require all of the following OpenRouter privacy settings to be enabled
+
+Go to https://openrouter.ai/settings/privacy and verify:
+
+| # | Setting | Status | Reason |
+|---|---------|--------|--------|
+| 1 | Enable paid endpoints that may train on inputs | ✅ Enabled | Required for free model + tool calling |
+| 2 | Enable free endpoints that may train on inputs | ✅ Enabled | Basic free model access |
+| 3 | Enable free endpoints that may publish prompts | ✅ Enabled | Advanced free model endpoints |
+
+⚠️ **When switching to paid models, disable #1, #2, #3 to protect privacy.**
+
+## Execution Mode
+
+Uses **foreground execution** (not daemon) to ensure the operator is always aware of bot activity:
+
+```bash
+# Start (auto-sends Slack webhook notification + runs gateway in foreground)
+bash scripts/start.sh
+
+# Stop: Ctrl+C (script auto-sends stop notification)
+```
+
+## Common Commands
+
+```bash
+openclaw doctor              # Health check
+openclaw status              # Channel and session status
+openclaw channels list       # List configured channels
+openclaw channels status     # Channel connection status (requires running gateway)
+openclaw models status       # Model and auth status
+openclaw cron list           # Scheduled background tasks
+```
+
+## File Structure
 
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/nwpie/vibe/ai-moltbot.git
-git branch -M main
-git push -uf origin main
+ai-moltbot/
+├── .env                     # Secrets: tokens, API keys (gitignored)
+├── .env.example             # Secret template (committed)
+├── scripts/
+│   └── start.sh             # Lifecycle script (with Slack webhook notifications)
+├── docs/
+│   └── SDD.md               # Software design document
+├── CLAUDE.md                # AI assistant guidelines
+└── README.md                # This file
 ```
 
-## Integrate with your tools
+## Create a Telegram Bot
 
-* [Set up project integrations](https://gitlab.com/nwpie/vibe/ai-moltbot/-/settings/integrations)
+1. Search **@BotFather** on Telegram → send `/newbot`
+2. Enter bot name and username (must end with `bot`)
+3. Copy HTTP API token → save to `TELEGRAM_BOT_TOKEN` in `.env`
+4. (Recommended) `/mybots` → Bot Settings → Group Privacy → Turn off
 
-## Collaborate with your team
+## Security Notes
 
-* [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
-
-## Test and Deploy
-
-Use the built-in continuous integration in GitLab.
-
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
-
-***
-
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+- Bot can access local system resources — **every new permission grant is a risk escalation**
+- DM policy must be `pairing`, never use `open`
+- Regularly review granted tool permissions
+- `.env` is in `.gitignore`, never commit secrets

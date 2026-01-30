@@ -1,0 +1,71 @@
+{
+  "meta": {
+    "lastTouchedVersion": "2026.1.29",
+    "lastTouchedAt": "2026-01-30T12:51:43.168Z"
+  },
+  "wizard": {
+    "lastRunAt": "2026-01-30T12:24:08.342Z",
+    "lastRunVersion": "2026.1.29",
+    "lastRunCommand": "doctor",
+    "lastRunMode": "local"
+  },
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "openrouter/openai/gpt-oss-120b:free"
+      },
+      "models": {
+        "openrouter/openai/gpt-oss-120b:free": {},
+        "openrouter/arcee-ai/trinity-large-preview:free": {},
+        "openrouter/z-ai/glm-4.5-air:free": {},
+        "openrouter/google/gemma-3-27b-it:free": {}
+      },
+      "maxConcurrent": 4,
+      "subagents": {
+        "maxConcurrent": 8
+      }
+    }
+  },
+  "messages": {
+    "ackReactionScope": "group-mentions"
+  },
+  "commands": {
+    "native": "auto",
+    "nativeSkills": "auto"
+  },
+  "hooks": {
+    "internal": {
+      "enabled": true,
+      "entries": {
+        "session-memory": {
+          "enabled": true
+        }
+      }
+    }
+  },
+  "gateway": {
+    "port": 18889,
+    "mode": "local",
+    "bind": "loopback",
+    "auth": {
+      "mode": "token",
+      "token": "your-token-here"
+    },
+    "tailscale": {
+      "mode": "off",
+      "resetOnExit": false
+    }
+  },
+  "plugins": {
+    "entries": {
+      "telegram": {
+        "enabled": true
+      }
+    }
+  },
+  "channels": {
+    "telegram": {
+      "enabled": true
+    }
+  }
+}
