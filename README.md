@@ -183,6 +183,19 @@ bash scripts/test-gemini-api.sh                    # Default: gemini-2.5-flash
 bash scripts/test-gemini-api.sh gemini-2.0-flash   # Test specific model
 ```
 
+## Custom Skills
+
+### Claude Code (`/claude_code`)
+
+Telegram command that invokes Claude Code CLI with a **5 calls/hour** rate limit.
+
+```
+/claude_code Explain what this function does: ...
+/claude_code Review this code for security issues
+```
+
+Skill files live in `~/.openclaw/skills/claude-code/`. See [docs/skills/claude_code.md](docs/skills/claude_code.md) for details.
+
 ## File Structure
 
 ```
@@ -202,9 +215,12 @@ ai-moltbot/
 │   ├── SDD.md               # Software design document
 │   ├── SKILL.md             # Skills reference and management guide
 │   ├── SOD_zh-tw.md         # Enhancement plan (zh-TW)
-│   └── channels/
-│       ├── telegram.md      # Telegram setup and pairing guide
-│       └── discord.md       # Discord setup and pairing guide
+│   ├── channels/
+│   │   ├── telegram.md      # Telegram setup and pairing guide
+│   │   └── discord.md       # Discord setup and pairing guide
+│   └── skills/
+│       ├── claude_code.md   # Claude Code skill overview
+│       └── claude_code/     # Skill source files (SKILL.md, wrapper, state)
 ├── CLAUDE.md                # AI assistant guidelines
 └── README.md                # This file
 ```
