@@ -14,12 +14,11 @@ openclaw --version
 openclaw onboard
 
 # 3. Set model (choose one)
-# Option A: Gemini direct (recommended — vision + tools + cheap)
-openclaw plugins enable google-gemini-cli-auth
-pnpm add -g @google/gemini-cli
-openclaw models auth login --provider google-gemini-cli
-openclaw models set "google-gemini-cli/gemini-2.5-flash"
-openclaw models set-image "google-gemini-cli/gemini-2.5-flash"
+# Option A: Gemini API key (recommended — vision + tools + free tier)
+#   Get a key at https://aistudio.google.com/apikey
+#   Add GEMINI_API_KEY=AIza... to .env
+openclaw models set "google/gemini-2.5-flash"
+openclaw models set-image "google/gemini-2.5-flash"
 
 # Option B: OpenRouter free models (no API cost)
 openclaw models set "openrouter/openai/gpt-oss-120b:free"
@@ -38,12 +37,10 @@ TELEGRAM_BOT_TOKEN="your-telegram-bot-token"
 OPENROUTER_API_KEY="sk-or-v1-your-openrouter-key"
 SLACK_WEBHOOK_URL="https://hooks.slack.com/services/..."
 
-# Gemini OAuth credentials (from @google/gemini-cli-core)
-GEMINI_CLI_OAUTH_CLIENT_ID="your-oauth-client-id"
-GEMINI_CLI_OAUTH_CLIENT_SECRET="your-oauth-client-secret"
-
-# Gemini API key (for test scripts only, not used by openclaw)
-GEMINI_API_KEY="your-gemini-api-key"
+GEMINI_API_KEY="AIza..."          # Primary model auth (google provider)
+HF_TOKEN="hf_..."                 # HuggingFace Inference API (Whisper transcription)
+B2_KEY_ID="..."                   # Backblaze B2 (youtube-to-pdf uploads)
+B2_APP_KEY="..."
 ```
 
 openclaw automatically reads `TELEGRAM_BOT_TOKEN` and `OPENROUTER_API_KEY` from environment variables — **no need to put them in `openclaw.json`**.
@@ -88,7 +85,7 @@ MoltBot uses a tiered model strategy:
 
 | Role | Model | Capabilities | Cost |
 |------|-------|-------------|------|
-| Primary | `google-gemini-cli/gemini-2.5-flash` | text + vision + tools, 1024k context | Paid (very low) |
+| Primary | `google/gemini-2.5-flash` | text + vision + tools, 1024k context | Free tier / very low |
 | Fallback 1 | `openrouter/google/gemma-3-27b-it:free` | text + vision, 128k context | Free |
 | Fallback 2 | `openrouter/meta-llama/llama-3.3-70b-instruct:free` | text + tools, 128k context | Free |
 
@@ -96,10 +93,10 @@ MoltBot uses a tiered model strategy:
 
 ```bash
 # Change primary model
-openclaw models set "google-gemini-cli/gemini-2.5-flash"
+openclaw models set "google/gemini-2.5-flash"
 
 # Change image model
-openclaw models set-image "google-gemini-cli/gemini-2.5-flash"
+openclaw models set-image "google/gemini-2.5-flash"
 
 # Manage fallbacks
 openclaw models fallbacks add "openrouter/model-name"
@@ -170,7 +167,7 @@ openclaw status              # Channel and session status
 openclaw channels list       # List configured channels
 openclaw channels status     # Channel connection status (requires running gateway)
 openclaw models status       # Model and auth status
-openclaw models auth login --provider google-gemini-cli  # Re-auth Gemini OAuth
+bash scripts/test-gemini-api.sh    # Verify Gemini API key
 openclaw cron list           # Scheduled background tasks
 ```
 
@@ -184,6 +181,17 @@ bash scripts/test-gemini-api.sh gemini-2.0-flash   # Test specific model
 ```
 
 ## Custom Skills
+
+### YouTube to PDF (`/youtube_to_pdf`)
+
+Converts a YouTube video into a bilingual summary PDF and uploads to Backblaze B2.
+
+```
+/youtube_to_pdf https://www.youtube.com/watch?v=... --lang zh-tw
+/youtube_to_pdf https://youtu.be/abc123 --lang en
+```
+
+Pipeline: subtitles (yt-dlp + Whisper fallback) → summaries (HuggingFace) → HTML → PDF (headless Chrome) → B2 upload. Skill files live in `skills/youtube-to-pdf/`, symlinked from `~/.openclaw/skills/`.
 
 ### Claude Code (`/claude_code`)
 
@@ -200,14 +208,24 @@ Skill files live in `~/.openclaw/skills/claude-code/`. See [docs/skills/claude_c
 
 ```
 ai-moltbot/
-├── .env                     # Secrets: tokens, API keys, OAuth credentials (gitignored)
+├── .env                     # Secrets: tokens, API keys (gitignored)
 ├── .env.example             # Secret template (committed)
 ├── scripts/
-│   ├── start_gateway.sh     # Start gateway (foreground, with Slack webhook)
+│   ├── start_gateway.sh     # Start gateway (foreground, API key preflight)
 │   ├── stop_gateway.sh      # Stop gateway (handles WSL2/no-systemd)
 │   ├── status_gateway.sh    # Gateway status overview
+│   ├── clear_session.sh     # Clear agent session history (telegram/discord/all)
 │   ├── start.sh             # Legacy wrapper → start_gateway.sh
 │   └── test-gemini-api.sh   # Gemini API connectivity test
+├── skills/
+│   └── youtube-to-pdf/      # YouTube → PDF pipeline (symlinked to ~/.openclaw/skills/)
+│       ├── SKILL.md         # Skill definition
+│       ├── youtube-to-pdf.sh
+│       ├── youtube_utils.py
+│       ├── process_video.py
+│       ├── summaries_to_html.py
+│       ├── html_to_pdf.py
+│       └── requirements.txt
 ├── openclaw/
 │   ├── openclaw.example.json         # Config template (OpenRouter free models)
 │   └── openclaw.gemini.example.json  # Config template (Gemini direct + free fallbacks)
@@ -236,4 +254,4 @@ ai-moltbot/
 - DM policy must be `pairing`, never use `open`
 - Regularly review granted tool permissions
 - `.env` is in `.gitignore`, never commit secrets
-- Gemini OAuth tokens auto-refresh; re-login if expired: `openclaw models auth login --provider google-gemini-cli`
+- Gemini uses API key auth (`GEMINI_API_KEY`) — no OAuth, no token expiry

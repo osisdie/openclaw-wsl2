@@ -1,0 +1,3 @@
+markdown
+python-dotenv
+imageio-ffmpeg
