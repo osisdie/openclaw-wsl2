@@ -7,9 +7,9 @@ MoltBot personal config repo. The bot itself is installed globally (`pnpm add -g
 ## Key Facts
 
 - **Channel**: Telegram (primary). Slack webhook for status notifications only.
-- **Model**: Gemini 2.5 Flash via `google-gemini-cli-auth` plugin (OAuth). Free fallbacks via OpenRouter.
+- **Model**: Gemini 2.5 Flash via `google` provider (API key: `GEMINI_API_KEY`). Free fallbacks via OpenRouter.
 - **Execution**: Foreground only (`openclaw gateway --verbose`). No daemon/systemd.
-- **Secrets**: `.env` file, never committed. Contains `TELEGRAM_BOT_TOKEN`, `OPENROUTER_API_KEY`, and Gemini OAuth credentials.
+- **Secrets**: `.env` file, never committed. Contains `TELEGRAM_BOT_TOKEN`, `OPENROUTER_API_KEY`, and `GEMINI_API_KEY`.
 - **Security**: Bot accesses local system — treat every new permission grant as a risk escalation. DM policy must be `pairing`, never `open`.
 
 ## Commands
@@ -18,7 +18,7 @@ MoltBot personal config repo. The bot itself is installed globally (`pnpm add -g
 - Stop: `bash scripts/stop_gateway.sh` (or `Ctrl+C` if foreground)
 - Status: `bash scripts/status_gateway.sh`
 - Health: `openclaw doctor`
-- Re-auth Gemini: `openclaw models auth login --provider google-gemini-cli`
+- Test Gemini: `bash scripts/test-gemini-api.sh`
 
 ## Files
 

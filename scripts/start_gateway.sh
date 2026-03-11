@@ -47,10 +47,28 @@ if [ -f "$PIDFILE" ]; then
   rm -f "$PIDFILE"
 fi
 
-notify "moltbot started (port $PORT)"
-
 export PNPM_HOME="$HOME/.local/share/pnpm"
 export PATH="$PNPM_HOME:$PATH"
+
+# --- Gemini API key pre-flight check ---
+GEMINI_KEY="${GEMINI_API_KEY:-}"
+if [ -n "$GEMINI_KEY" ]; then
+  HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 \
+    -H "Content-Type: application/json" \
+    -d '{"contents":[{"parts":[{"text":"ping"}]}]}' \
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${GEMINI_KEY}")
+  if [ "$HTTP_CODE" = "200" ]; then
+    echo "[preflight] Gemini API key: OK"
+  else
+    echo "[preflight] Gemini API key: FAILED (HTTP $HTTP_CODE)"
+    echo "   Check GEMINI_API_KEY in .env (get one at https://aistudio.google.com/apikey)"
+  fi
+else
+  echo "[preflight] Gemini API key: not set (GEMINI_API_KEY missing from .env)"
+  echo "   Get one at https://aistudio.google.com/apikey"
+fi
+
+notify "moltbot started (port $PORT)"
 
 # Foreground execution — Ctrl+C to stop
 openclaw gateway --port "$PORT" --verbose
